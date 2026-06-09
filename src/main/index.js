@@ -9,10 +9,18 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { registerIpc } from './ipc.js'
 import { getRecent, clearRecent } from './recent.js'
+import { restoredBounds, wasMaximized, captureWindowState } from './window-state.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// Default window geometry, also used as the fallback when no (or offscreen)
+// persisted state exists.
+const DEFAULT_BOUNDS = { width: 1100, height: 800 }
+
 let mainWindow = null
+
+// Debounce timer for persisting window state on resize/move.
+let saveStateTimer = null
 
 // Close-guard state. forceClose lets the renderer (after Save / Don't Save) or
 // the main-process dialog allow the window to actually tear down. lastDirty is
@@ -181,9 +189,12 @@ function createWindow() {
   // out/main/index.js, this file's runtime location).
   const preloadPath = path.join(__dirname, '../preload/index.js')
 
+  // Restore the previous size/position, clamped to a visible display (falls
+  // back to defaults if missing or offscreen).
+  const bounds = restoredBounds(DEFAULT_BOUNDS)
+
   mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 800,
+    ...bounds,
     minWidth: 640,
     minHeight: 480,
     show: false,
@@ -192,12 +203,38 @@ function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      // Keep the editor responsive (timers/rAF not throttled) when the window
+      // is in the background.
+      backgroundThrottling: false
     }
   })
 
+  // Restore the maximized state from the last session.
+  if (wasMaximized()) mainWindow.maximize()
+
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  // --- Persist window state ----------------------------------------------
+  // Save immediately on close, and debounced on resize/move so dragging or
+  // resizing doesn't hammer the disk.
+  const scheduleSaveState = () => {
+    if (saveStateTimer) clearTimeout(saveStateTimer)
+    saveStateTimer = setTimeout(() => {
+      saveStateTimer = null
+      if (mainWindow) captureWindowState(mainWindow)
+    }, 400)
+  }
+  mainWindow.on('resize', scheduleSaveState)
+  mainWindow.on('move', scheduleSaveState)
+  mainWindow.on('close', () => {
+    if (saveStateTimer) {
+      clearTimeout(saveStateTimer)
+      saveStateTimer = null
+    }
+    if (mainWindow) captureWindowState(mainWindow)
   })
 
   // --- OS-level close guard ----------------------------------------------
@@ -276,6 +313,10 @@ function createWindow() {
   }
 
   mainWindow.on('closed', () => {
+    if (saveStateTimer) {
+      clearTimeout(saveStateTimer)
+      saveStateTimer = null
+    }
     mainWindow = null
     forceClose = false
     lastDirty = false

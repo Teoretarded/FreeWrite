@@ -10,6 +10,8 @@ import { createEditor } from './editor.js'
 import { buildToolbar } from './toolbar.js'
 import { buildStatusbar } from './statusbar.js'
 import { mountFind } from './find.js'
+import { mountOutline } from './outline.js'
+import { createFocusMode } from './focusmode.js'
 import './styles.css'
 
 // --- Module-level state ------------------------------------------------------
@@ -19,6 +21,8 @@ let editor = null
 let toolbarApi = null
 let statusApi = null
 let findApi = null
+let outlineApi = null
+let focusApi = null
 let autosaveTimer = null
 
 const AUTOSAVE_KEY = 'freewrite-autosave'
@@ -40,7 +44,11 @@ const fw =
     onOpenRecent: () => {},
     openPath: async () => ({ canceled: true }),
     pickImage: async () => ({ canceled: true }),
-    print: async () => ({ ok: false, error: 'unavailable' })
+    print: async () => ({ ok: false, error: 'unavailable' }),
+    // Added in parallel by the main/preload agent; guarded so this module still
+    // builds and runs (drag & drop degrades gracefully) if they are absent.
+    getPathForFile: () => '',
+    readImage: async () => ({ canceled: true })
   }
 
 // --- Title / dirty helpers ---------------------------------------------------
@@ -268,6 +276,86 @@ async function doPrint() {
   if (r && r.error) showToast(`Print failed: ${r.error}`)
 }
 
+// --- Drag & drop -------------------------------------------------------------
+const DOC_EXTS = ['docx', 'md', 'markdown', 'html', 'htm', 'txt']
+const IMG_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp']
+
+function extOf(name) {
+  const m = /\.([a-z0-9]+)$/i.exec(String(name || ''))
+  return m ? m[1].toLowerCase() : ''
+}
+
+// Open a dropped document file through the existing open pipeline (with guard).
+async function openDroppedDocument(path) {
+  if (!confirmDiscardIfDirty()) return
+  let r
+  try {
+    r = await fw.openPath(path)
+  } catch (err) {
+    showToast(`Open failed: ${String(err)}`)
+    return
+  }
+  if (!r || r.canceled) return
+  if (r.error) {
+    showToast(`Could not open file: ${r.error}`)
+    return
+  }
+  if (r.html != null) {
+    loadIntoEditor(r.html, r.path)
+    clearAutosave()
+  }
+}
+
+// Insert a dropped image at the cursor via the preload readImage bridge.
+async function insertDroppedImage(path) {
+  let r
+  try {
+    r = await fw.readImage(path)
+  } catch (err) {
+    showToast(`Could not insert image: ${String(err)}`)
+    return
+  }
+  if (!r || r.canceled) return
+  if (r.error) {
+    showToast(`Could not insert image: ${r.error}`)
+    return
+  }
+  if (r.dataUrl) editor.chain().focus().setImage({ src: r.dataUrl }).run()
+}
+
+function setupDragAndDrop() {
+  // Prevent the browser from navigating to a dropped file in every case.
+  const stop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  window.addEventListener('dragover', stop)
+  window.addEventListener('dragenter', stop)
+
+  window.addEventListener('drop', async (e) => {
+    const files = e.dataTransfer?.files
+    if (!files || !files.length) return
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Route each dropped file by extension. Resolve the real path via the
+    // preload bridge (Electron strips File.path under contextIsolation).
+    for (const file of files) {
+      const path = fw.getPathForFile ? fw.getPathForFile(file) : ''
+      const ext = extOf(path || file.name)
+      if (IMG_EXTS.includes(ext)) {
+        if (path) await insertDroppedImage(path)
+      } else if (DOC_EXTS.includes(ext)) {
+        if (path) {
+          // Open the first document and stop — opening replaces the editor.
+          await openDroppedDocument(path)
+          return
+        }
+      }
+    }
+  })
+}
+
 // --- Theme (dark mode) -------------------------------------------------------
 function applyTheme(theme) {
   const dark = theme === 'dark'
@@ -337,10 +425,32 @@ function zoomStep(dir) {
   applyZoom(ZOOM_LEVELS[nextIdx])
 }
 
+// --- Insert date -------------------------------------------------------------
+function doInsertDate() {
+  // Renderer-side Date is allowed here (this is not a workflow script).
+  const formatted = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+  editor.chain().focus().insertContent(formatted).run()
+}
+
+// --- Focus mode / outline toggles --------------------------------------------
+function toggleFocus() {
+  if (focusApi) focusApi.toggle()
+}
+
+function toggleOutline() {
+  if (outlineApi) outlineApi.toggle()
+  if (toolbarApi && outlineApi) toolbarApi.setOutlineActive(outlineApi.isVisible())
+}
+
 // --- UI refresh --------------------------------------------------------------
 function refreshUI() {
   if (toolbarApi) toolbarApi.refresh()
   if (statusApi) statusApi.update(editor)
+  if (outlineApi) outlineApi.rebuild()
 }
 
 // --- Boot --------------------------------------------------------------------
@@ -364,17 +474,33 @@ function boot() {
     onZoomSet: (pct) => applyZoom(pct)
   })
 
+  // Debounced toolbar active-state refresh. Selection changes/focus drive this
+  // (NOT every keystroke); the debounce coalesces rapid selection movement so
+  // the hot path stays cheap on large documents.
+  let toolbarRefreshTimer = null
+  const refreshToolbarDebounced = () => {
+    clearTimeout(toolbarRefreshTimer)
+    toolbarRefreshTimer = setTimeout(() => {
+      if (toolbarApi) toolbarApi.refresh()
+    }, 120)
+  }
+
   editor = createEditor({
     element: pageEl,
     content: '<p></p>',
     onUpdate: () => {
       if (!isDirty) markDirty(true)
-      if (statusApi) statusApi.update(editor)
+      // Counts + outline are debounced off the hot typing path. We deliberately
+      // do NOT call getHTML() here — autosave (below) serializes at most once
+      // per its own 1.5s debounce.
+      if (statusApi) statusApi.updateDebounced(editor)
+      if (outlineApi && outlineApi.isVisible()) outlineApi.rebuildDebounced()
       scheduleAutosave()
     },
     onSelectionUpdate: () => {
-      if (toolbarApi) toolbarApi.refresh()
-      if (statusApi) statusApi.update(editor)
+      refreshToolbarDebounced()
+      // Selection-count readout in the status bar (debounced).
+      if (statusApi) statusApi.updateDebounced(editor)
     },
     onCreate: () => {
       refreshUI()
@@ -382,6 +508,14 @@ function boot() {
   })
 
   if (findHost) findApi = mountFind(editor, findHost)
+
+  // Outline panel (side navigator) + focus mode.
+  const outlineHost = document.getElementById('outline-panel')
+  const editorArea = document.getElementById('editor-area')
+  if (outlineHost) outlineApi = mountOutline(outlineHost, editor, editorArea)
+  focusApi = createFocusMode((active) => {
+    if (toolbarApi) toolbarApi.setFocusActive(active)
+  })
 
   toolbarApi = buildToolbar(toolbarEl, editor, {
     onNew: doNew,
@@ -394,12 +528,19 @@ function boot() {
     onLink: doSetLink,
     onUnlink: doUnlink,
     onPrint: doPrint,
+    onInsertDate: doInsertDate,
+    onToggleOutline: toggleOutline,
+    onToggleFocus: toggleFocus,
     onToggleTheme: toggleTheme
   })
 
   // Reflect persisted theme/zoom now that toolbar/status exist.
   loadTheme()
   loadZoom()
+
+  // Reflect persisted outline / focus state on their toolbar toggles.
+  if (outlineApi) toolbarApi.setOutlineActive(outlineApi.isVisible())
+  if (focusApi) toolbarApi.setFocusActive(focusApi.isActive())
 
   // Route application-menu actions.
   fw.onMenu((action) => {
@@ -447,6 +588,12 @@ function boot() {
 
   // Keyboard shortcuts as a renderer-side backup to the application menu.
   window.addEventListener('keydown', (e) => {
+    // Focus / distraction-free mode: F11 or Ctrl+Shift+F (no Ctrl needed for F11).
+    if (e.key === 'F11' || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f')) {
+      e.preventDefault()
+      toggleFocus()
+      return
+    }
     const mod = e.ctrlKey || e.metaKey
     if (!mod) return
     const key = e.key.toLowerCase()
@@ -471,6 +618,12 @@ function boot() {
       doPrint()
     }
   })
+
+  // --- Drag & drop (window level) -------------------------------------------
+  // Dropping a document file opens it (after the unsaved-changes guard);
+  // dropping an image inserts it at the cursor. We prevent the browser's
+  // default behaviour of navigating to the dropped file.
+  setupDragAndDrop()
 
   // Initial state.
   markDirty(false)

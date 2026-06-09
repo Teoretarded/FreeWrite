@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // FreeWrite preload bridge.
 // Exposes a minimal, typed surface on window.freewrite. contextIsolation is on
@@ -66,6 +66,21 @@ const api = {
   // --- Image picker ------------------------------------------------------
   // -> { canceled, dataUrl?, error? }
   pickImage: () => ipcRenderer.invoke('file:pick-image'),
+
+  // --- Drag-and-drop -----------------------------------------------------
+  // Resolve the absolute filesystem path for a dropped/selected File object.
+  // Synchronous; returns '' if it can't be resolved.
+  getPathForFile: (file) => {
+    try {
+      return webUtils.getPathForFile(file)
+    } catch {
+      return ''
+    }
+  },
+
+  // Read an image at a known path into a data URL.
+  // -> { canceled?, dataUrl?, error? }
+  readImage: (path) => ipcRenderer.invoke('file:read-image', path),
 
   // --- Print -------------------------------------------------------------
   // -> { ok, error? }

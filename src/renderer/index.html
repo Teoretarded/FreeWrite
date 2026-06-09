@@ -21,10 +21,13 @@
       <!-- Recovery banner (shown on startup if an autosaved draft exists) -->
       <div id="recovery-banner" class="recovery-banner" role="status"></div>
 
-      <!-- Scrollable canvas holding the document page -->
-      <main class="editor-area" id="editor-area">
-        <div class="page" id="page" spellcheck="true"></div>
-      </main>
+      <!-- Body row: outline panel + scrollable canvas holding the page -->
+      <div class="body-row" id="body-row">
+        <aside id="outline-panel" class="outline-panel" aria-label="Document outline"></aside>
+        <main class="editor-area" id="editor-area">
+          <div class="page" id="page" spellcheck="true"></div>
+        </main>
+      </div>
 
       <!-- Bottom status bar -->
       <footer id="statusbar" class="statusbar"></footer>

@@ -308,6 +308,97 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Body row: outline panel + editor area
+   ---------------------------------------------------------------------------*/
+.body-row {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0; /* allow children to scroll inside flex */
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Outline / navigator side panel
+   ---------------------------------------------------------------------------*/
+.outline-panel {
+  flex: 0 0 0;
+  width: 0;
+  overflow: hidden;
+  background: var(--chrome-bg);
+  border-right: 1px solid var(--border-strong);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.18s ease;
+}
+
+.outline-panel.show {
+  flex: 0 0 240px;
+  width: 240px;
+}
+
+.outline-header {
+  flex: 0 0 auto;
+  padding: 10px 14px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.outline-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 6px 6px 12px;
+}
+
+.outline-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.outline-item:hover {
+  background: var(--hover-bg);
+}
+
+.outline-h1 {
+  font-weight: 600;
+}
+.outline-h2 {
+  padding-left: 20px;
+  color: var(--text);
+}
+.outline-h3 {
+  padding-left: 32px;
+  color: var(--text-muted);
+}
+
+.outline-empty {
+  display: none;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.outline-empty.show {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
    Editor area + page
    ---------------------------------------------------------------------------*/
 .editor-area {
@@ -866,6 +957,37 @@ html.dark .recovery-banner .rb-recover {
 }
 
 /* The page itself stays white in dark mode (Word-like). */
+
+/* ---------------------------------------------------------------------------
+   Focus / distraction-free mode
+   Hides the toolbar, find bar, outline panel and status bar, and centers the
+   page on a calm background. A pure class flip on <html>, so it's smooth.
+   ---------------------------------------------------------------------------*/
+html.focus-mode .toolbar,
+html.focus-mode .statusbar,
+html.focus-mode #find-host,
+html.focus-mode .outline-panel {
+  display: none !important;
+}
+
+html.focus-mode .body-row {
+  background: var(--canvas-bg);
+}
+
+html.focus-mode .editor-area {
+  padding-top: 48px;
+  padding-bottom: 96px;
+  background: var(--canvas-bg);
+}
+
+/* A calmer, slightly off-white canvas in focus mode for light theme. */
+html.focus-mode:not(.dark) {
+  --canvas-bg: #e9e8e4;
+}
+
+html.focus-mode .page {
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.1);
+}
 
 /* ---------------------------------------------------------------------------
    Print / PDF mode

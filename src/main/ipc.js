@@ -225,6 +225,22 @@ const IMAGE_MIME = {
   bmp: 'image/bmp'
 }
 
+// Read an image file from disk into a data URL, reusing the shared MIME mapping.
+// Returns { dataUrl } on success or { error } on failure. Never throws.
+async function readImageToDataUrl(filePath) {
+  try {
+    if (!filePath || typeof filePath !== 'string') {
+      return { error: 'No file path provided' }
+    }
+    const ext = extOf(filePath)
+    const mime = IMAGE_MIME[ext] || 'application/octet-stream'
+    const data = await fs.readFile(filePath)
+    return { dataUrl: `data:${mime};base64,${data.toString('base64')}` }
+  } catch (err) {
+    return { error: String(err) }
+  }
+}
+
 function notifyRecentChanged() {
   try {
     hooks.onRecentChanged?.()
@@ -311,14 +327,17 @@ export function registerIpc(opts = {}) {
       }
 
       const filePath = res.filePaths[0]
-      const ext = extOf(filePath)
-      const mime = IMAGE_MIME[ext] || 'application/octet-stream'
-      const data = await fs.readFile(filePath)
-      const dataUrl = `data:${mime};base64,${data.toString('base64')}`
-      return { canceled: false, dataUrl }
+      const result = await readImageToDataUrl(filePath)
+      if (result.error) return { canceled: false, error: result.error }
+      return { canceled: false, dataUrl: result.dataUrl }
     } catch (err) {
       return { canceled: false, error: String(err) }
     }
+  })
+
+  // --- Read an image at a known path -> data URL (drag-and-drop) ----------
+  ipcMain.handle('file:read-image', async (_event, filePath) => {
+    return readImageToDataUrl(filePath)
   })
 
   // --- Print -------------------------------------------------------------

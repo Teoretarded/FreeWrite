@@ -28,6 +28,7 @@ function readingTime(words) {
  * @param {(pct:number) => void} [opts.onZoomSet]
  * @returns {{
  *   update: (editor: import('@tiptap/core').Editor) => void,
+ *   updateDebounced: (editor: import('@tiptap/core').Editor) => void,
  *   setSaved: (saved: boolean) => void,
  *   setFile: (name: string) => void,
  *   setZoom: (pct: number) => void
@@ -127,6 +128,16 @@ export function buildStatusbar(container, opts = {}) {
     readEl.textContent = readingTime(totalWords)
   }
 
+  // Debounced variant for the hot typing path: recomputing word/char/reading
+  // counts on every keystroke is wasteful on large documents, so coalesce to
+  // ~220ms. Selection changes go through here too — a slight delay on the
+  // "N of M words selected" readout is imperceptible and keeps typing snappy.
+  let updateTimer = null
+  function updateDebounced(editor) {
+    clearTimeout(updateTimer)
+    updateTimer = setTimeout(() => update(editor), 220)
+  }
+
   function setSaved(saved) {
     savedEl.classList.toggle('is-saved', saved)
     savedEl.classList.toggle('is-unsaved', !saved)
@@ -152,7 +163,7 @@ export function buildStatusbar(container, opts = {}) {
 
   setSaved(true)
 
-  return { update, setSaved, setFile, setZoom }
+  return { update, updateDebounced, setSaved, setFile, setZoom }
 }
 
 export default buildStatusbar

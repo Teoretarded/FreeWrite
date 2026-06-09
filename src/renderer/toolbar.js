@@ -74,7 +74,10 @@ function icon(name) {
     sun: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>',
     moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
     hr: '<line x1="3" y1="12" x2="21" y2="12"/>',
-    quote: '<path d="M7 7H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1H4"/><path d="M17 7h-3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1h-1"/>'
+    quote: '<path d="M7 7H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1H4"/><path d="M17 7h-3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1h-1"/>',
+    date: '<rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>',
+    outline: '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="16" y2="18"/><line x1="4" y1="6" x2="5" y2="6"/><line x1="4" y1="12" x2="5" y2="12"/><line x1="4" y1="18" x2="5" y2="18"/>',
+    focus: '<path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M20 8V5a1 1 0 0 0-1-1h-3"/><path d="M4 16v3a1 1 0 0 0 1 1h3"/><path d="M20 16v3a1 1 0 0 1-1 1h-3"/><circle cx="12" cy="12" r="2.5"/>'
   }
   return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ''}</svg>`
 }
@@ -455,7 +458,13 @@ export function buildToolbar(container, editor, actions = {}) {
     title: 'Remove link',
     onClick: () => actions.onUnlink?.()
   })
-  insertGroup.append(tableMenu.wrap, imageBtn, linkBtn, unlinkBtn)
+  const dateBtn = makeButton({
+    name: 'insert-date',
+    iconName: 'date',
+    title: 'Insert date',
+    onClick: () => actions.onInsertDate?.()
+  })
+  insertGroup.append(tableMenu.wrap, imageBtn, linkBtn, unlinkBtn, dateBtn)
 
   // --- Tools: find + print --------------------------------------------------
   const toolsGroup = makeGroup()
@@ -473,15 +482,27 @@ export function buildToolbar(container, editor, actions = {}) {
   })
   toolsGroup.append(findBtn, printBtn)
 
-  // --- View: dark-mode toggle -----------------------------------------------
+  // --- View: outline + focus + dark-mode toggles ----------------------------
   const viewGroup = makeGroup()
+  const outlineBtn = makeButton({
+    name: 'outline',
+    iconName: 'outline',
+    title: 'Toggle document outline',
+    onClick: () => actions.onToggleOutline?.()
+  })
+  const focusBtn = makeButton({
+    name: 'focus',
+    iconName: 'focus',
+    title: 'Focus / distraction-free mode (Ctrl+Shift+F)',
+    onClick: () => actions.onToggleFocus?.()
+  })
   const themeBtn = makeButton({
     name: 'theme',
     iconName: 'moon',
     title: 'Toggle dark mode',
     onClick: () => actions.onToggleTheme?.()
   })
-  viewGroup.append(themeBtn)
+  viewGroup.append(outlineBtn, focusBtn, themeBtn)
 
   // Assemble.
   container.append(
@@ -561,8 +582,18 @@ export function buildToolbar(container, editor, actions = {}) {
     themeBtn.title = dark ? 'Switch to light mode' : 'Switch to dark mode'
   }
 
+  // Reflect outline-panel / focus-mode active state on their toggle buttons.
+  function setOutlineActive(active) {
+    outlineBtn.classList.toggle('is-active', !!active)
+    outlineBtn.setAttribute('aria-pressed', String(!!active))
+  }
+  function setFocusActive(active) {
+    focusBtn.classList.toggle('is-active', !!active)
+    focusBtn.setAttribute('aria-pressed', String(!!active))
+  }
+
   refresh()
-  return { refresh, setDarkActive }
+  return { refresh, setDarkActive, setOutlineActive, setFocusActive }
 }
 
 // Indentation helper. In lists, sink/lift list items. Outside lists, adjust a

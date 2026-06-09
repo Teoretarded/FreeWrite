@@ -208,7 +208,9 @@ export const EditorKeymaps = Extension.create({
  * @param {string}      [opts.content] - initial HTML.
  * @param {() => void}  [opts.onUpdate] - "dirty" callback fired on every change.
  * @param {(editor: Editor) => void} [opts.onSelectionUpdate] - fired on
- *        selection/transaction so the toolbar can refresh active states.
+ *        selection change / focus so the toolbar can refresh active states.
+ *        Deliberately NOT fired on every transaction (typing) — that keeps the
+ *        hot path cheap on large documents.
  * @param {() => void}  [opts.onCreate] - fired once the editor is ready.
  * @returns {Editor}
  */
@@ -258,30 +260,11 @@ export function createEditor({
           }
         }
         return false
-      },
-      // Drag-and-drop image files become embedded data URLs.
-      handleDrop: (view, event) => {
-        const files = event.dataTransfer?.files
-        if (files && files.length) {
-          const imgs = [...files].filter((f) => f.type.startsWith('image/'))
-          if (imgs.length) {
-            event.preventDefault()
-            const coords = view.posAtCoords({ left: event.clientX, top: event.clientY })
-            for (const file of imgs) {
-              const reader = new FileReader()
-              reader.onload = () => {
-                const chain = editor.chain().focus()
-                if (coords) chain.insertContentAt(coords.pos, { type: 'image', attrs: { src: String(reader.result) } })
-                else chain.setImage({ src: String(reader.result) })
-                chain.run()
-              }
-              reader.readAsDataURL(file)
-            }
-            return true
-          }
-        }
-        return false
       }
+      // Note: file drag-and-drop (images + documents) is handled at the window
+      // level in main.js, which routes via the preload bridge (getPathForFile /
+      // readImage / openPath). We intentionally do NOT handle dropped files here
+      // to avoid double-inserting them.
     },
     extensions: [
       StarterKit.configure({
@@ -320,11 +303,14 @@ export function createEditor({
       if (typeof onUpdate === 'function') onUpdate()
     },
     onSelectionUpdate: ({ editor: ed }) => {
+      // Refresh toolbar active-state only on selection changes (and focus,
+      // below) — NOT on every transaction/keystroke. This keeps typing on
+      // large documents cheap. The caller debounces this further.
       if (typeof onSelectionUpdate === 'function') onSelectionUpdate(ed)
     },
-    onTransaction: ({ editor: ed }) => {
-      // Active-state of toolbar buttons can change without a selection change
-      // (e.g. toggling a mark), so refresh on every transaction too.
+    onFocus: ({ editor: ed }) => {
+      // Focus can change which marks are "active" relative to a collapsed
+      // cursor; refresh once on focus so the toolbar is correct.
       if (typeof onSelectionUpdate === 'function') onSelectionUpdate(ed)
     }
   })

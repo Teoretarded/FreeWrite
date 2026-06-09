@@ -391,7 +391,10 @@ let zoom = 100
 
 function applyZoom(pct) {
   zoom = pct
-  const pageEl = document.querySelector('.page')
+  // Zoom is applied to .page-wrap (CSS `zoom` scales layout + scrollbars
+  // correctly). The pagination plugin observes style changes on .page-wrap and
+  // recomputes breaks in zoom-normalized logical px.
+  const pageEl = document.querySelector('.page-wrap')
   if (pageEl) pageEl.style.zoom = String(pct / 100)
   if (statusApi) statusApi.setZoom(pct)
   try {
@@ -455,7 +458,7 @@ function refreshUI() {
 
 // --- Boot --------------------------------------------------------------------
 function boot() {
-  const pageEl = document.querySelector('.page')
+  const pageEl = document.querySelector('.page-wrap')
   const toolbarEl = document.getElementById('toolbar')
   const statusbarEl = document.getElementById('statusbar')
   const findHost = document.getElementById('find-host')
@@ -506,6 +509,11 @@ function boot() {
       refreshUI()
     }
   })
+
+  // Expose the editor on window for e2e tests (harmless in production; the
+  // bridge surface is unaffected). Tests use this to set large documents
+  // deterministically so on-screen pagination can be exercised.
+  if (typeof window !== 'undefined') window.__fwEditor = editor
 
   if (findHost) findApi = mountFind(editor, findHost)
 

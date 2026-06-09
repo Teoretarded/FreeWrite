@@ -28,7 +28,7 @@ test.beforeAll(async () => {
   page = await app.firstWindow()
   // Wait for the renderer to finish booting: the editor mounts a ProseMirror
   // contenteditable inside .page.
-  await page.waitForSelector('.page .ProseMirror', { state: 'visible', timeout: 30_000 })
+  await page.waitForSelector('.ProseMirror', { state: 'visible', timeout: 30_000 })
 })
 
 test.afterAll(async () => {
@@ -46,7 +46,7 @@ test.afterAll(async () => {
 
 // Helper: type into the editor after focusing it.
 async function typeInEditor(text) {
-  const editor = page.locator('.page .ProseMirror')
+  const editor = page.locator('.ProseMirror')
   await editor.click()
   await page.keyboard.type(text)
 }
@@ -55,19 +55,19 @@ async function typeInEditor(text) {
 async function resetEditor() {
   await page.evaluate(() => {
     // Select-all + delete via the editor if exposed, else clear DOM content.
-    const pm = document.querySelector('.page .ProseMirror')
+    const pm = document.querySelector('.ProseMirror')
     if (pm) {
       pm.focus()
     }
   })
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+A')
   await page.keyboard.press('Delete')
 }
 
 test('app boots and the editor mounts', async () => {
   // The editor's contenteditable region is visible.
-  await expect(page.locator('.page .ProseMirror')).toBeVisible()
+  await expect(page.locator('.ProseMirror')).toBeVisible()
   // The toolbar built its buttons.
   await expect(page.locator('#toolbar .tb-btn[data-name="bold"]')).toBeVisible()
   // The status bar exists.
@@ -77,7 +77,7 @@ test('app boots and the editor mounts', async () => {
 test('typing text appears in the editor', async () => {
   await resetEditor()
   await typeInEditor('Hello FreeWrite')
-  await expect(page.locator('.page .ProseMirror')).toContainText('Hello FreeWrite')
+  await expect(page.locator('.ProseMirror')).toContainText('Hello FreeWrite')
 })
 
 test('word count updates in the status bar', async () => {
@@ -93,7 +93,7 @@ test('Bold button wraps selection in <strong>', async () => {
   await page.keyboard.press('Control+A')
   await page.locator('#toolbar .tb-btn[data-name="bold"]').click()
   // ProseMirror renders bold as <strong>.
-  await expect(page.locator('.page .ProseMirror strong')).toHaveText('bold me')
+  await expect(page.locator('.ProseMirror strong')).toHaveText('bold me')
   // The bold button reflects active state.
   await expect(page.locator('#toolbar .tb-btn[data-name="bold"]')).toHaveClass(/is-active/)
 })
@@ -104,7 +104,7 @@ test('Heading 1 style makes an <h1>', async () => {
   await page.keyboard.press('Control+A')
   // The paragraph-style dropdown is the first select in the toolbar.
   await page.locator('#toolbar .tb-style-select').selectOption('h1')
-  await expect(page.locator('.page .ProseMirror h1')).toHaveText('My Heading')
+  await expect(page.locator('.ProseMirror h1')).toHaveText('My Heading')
 })
 
 test('dark-mode toggle adds the "dark" class to <html>', async () => {
@@ -125,20 +125,20 @@ test('dark-mode toggle adds the "dark" class to <html>', async () => {
 
 test('insert table creates a <table>', async () => {
   await resetEditor()
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   // Open the Table dropdown then click "Insert table (3×3)".
   await page.locator('#toolbar .tb-dropdown-trigger').click()
   await page.locator('#toolbar .tb-menu-item', { hasText: 'Insert table' }).click()
-  await expect(page.locator('.page .ProseMirror table')).toBeVisible()
+  await expect(page.locator('.ProseMirror table')).toBeVisible()
   // 3 columns in the (header) first row.
-  const headerCells = page.locator('.page .ProseMirror table tr').first().locator('th, td')
+  const headerCells = page.locator('.ProseMirror table tr').first().locator('th, td')
   await expect(headerCells).toHaveCount(3)
 })
 
 test('find bar (Ctrl+F) opens', async () => {
   await resetEditor()
   await typeInEditor('find this word, find that word')
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+F')
   await expect(page.locator('.fw-findbar')).toHaveClass(/open/)
   await expect(page.locator('.fw-find-input')).toBeVisible()
@@ -156,13 +156,13 @@ test('italic and underline marks render correctly', async () => {
   await page.keyboard.press('Control+A')
   await page.locator('#toolbar .tb-btn[data-name="italic"]').click()
   await page.locator('#toolbar .tb-btn[data-name="underline"]').click()
-  await expect(page.locator('.page .ProseMirror em')).toHaveText('styled text')
-  await expect(page.locator('.page .ProseMirror u')).toHaveText('styled text')
+  await expect(page.locator('.ProseMirror em')).toHaveText('styled text')
+  await expect(page.locator('.ProseMirror u')).toHaveText('styled text')
 })
 
 test('bullet list button creates a <ul>', async () => {
   await resetEditor()
   await typeInEditor('list item')
   await page.locator('#toolbar .tb-btn[data-name="bulletList"]').click()
-  await expect(page.locator('.page .ProseMirror ul li')).toContainText('list item')
+  await expect(page.locator('.ProseMirror ul li')).toContainText('list item')
 })

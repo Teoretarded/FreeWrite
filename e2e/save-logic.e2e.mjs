@@ -28,7 +28,7 @@ test.beforeAll(async () => {
     env: { ...process.env, NODE_ENV: 'production' }
   })
   page = await app.firstWindow()
-  await page.waitForSelector('.page .ProseMirror', { state: 'visible', timeout: 30_000 })
+  await page.waitForSelector('.ProseMirror', { state: 'visible', timeout: 30_000 })
 })
 
 test.afterAll(async () => {

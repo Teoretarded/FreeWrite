@@ -412,13 +412,23 @@ body {
   align-items: flex-start;
 }
 
-.page {
-  width: var(--page-width);
-  min-height: 11in;
-  background: #fff;
-  padding: var(--page-pad);
-  box-shadow: 0 2px 14px var(--page-shadow);
-  border-radius: 2px;
+/* ---------------------------------------------------------------------------
+   Paginated page sheets
+   .page-wrap is the zoom target. It holds two layers:
+     - .page-sheets : white US-Letter sheets drawn behind the text (JS-sized)
+     - .ProseMirror : the editor content, transparent, sitting on top. Page
+       breaks are reserved by .fw-page-break spacer decorations so whole blocks
+       land on the correct sheet's content band.
+   816px = 8.5in * 96; sheet height/position and wrap min-height are set in JS
+   (see pagination.js).
+   ---------------------------------------------------------------------------*/
+.page-wrap {
+  position: relative;
+  width: 816px;
+  margin: 0 auto;
+  /* min-height is set by pagination.js to match the stacked sheets. A sensible
+     fallback for the first paint / when pagination hasn't run yet. */
+  min-height: 1056px;
   color: #111;
   font-family: var(--font-body);
   font-size: 11pt;
@@ -426,68 +436,102 @@ body {
   outline: none;
 }
 
-/* TipTap/ProseMirror surface */
-.page .ProseMirror {
-  outline: none;
-  min-height: calc(11in - 2 * var(--page-pad));
+.page-sheets {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.page .ProseMirror > * + * {
+.fw-sheet {
+  position: absolute;
+  left: 0;
+  width: 816px;
+  height: 1056px;
+  background: #fff;
+  box-shadow: 0 2px 14px var(--page-shadow);
+  border-radius: 8px;
+}
+
+/* The spacer decoration that pushes a block onto the next sheet. It only
+   reserves vertical space (white sheets are drawn by .page-sheets); it must be
+   transparent and non-interactive so the caret can never land in the gap. */
+.fw-page-break {
+  display: block;
+  width: 100%;
+  user-select: none;
+  pointer-events: none;
+  background: transparent;
+}
+
+/* TipTap/ProseMirror surface — content layer above the sheets. Left/right page
+   margins come from the horizontal padding; the top padding is the first page's
+   top margin. */
+.page-wrap .ProseMirror {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  padding: 96px;
+  outline: none;
+  min-height: 1056px;
+}
+
+.page-wrap .ProseMirror > * + * {
   margin-top: 0;
 }
 
-.page p {
+.page-wrap p {
   margin: 0 0 10pt;
 }
 
-.page h1 {
+.page-wrap h1 {
   font-size: 22pt;
   font-weight: 700;
   margin: 14pt 0 8pt;
   line-height: 1.2;
 }
 
-.page h2 {
+.page-wrap h2 {
   font-size: 17pt;
   font-weight: 700;
   margin: 12pt 0 6pt;
   line-height: 1.25;
 }
 
-.page h3 {
+.page-wrap h3 {
   font-size: 14pt;
   font-weight: 700;
   margin: 10pt 0 5pt;
   line-height: 1.3;
 }
 
-.page ul,
-.page ol {
+.page-wrap ul,
+.page-wrap ol {
   margin: 0 0 10pt;
   padding-left: 28px;
 }
 
-.page li {
+.page-wrap li {
   margin: 2pt 0;
 }
 
-.page li > p {
+.page-wrap li > p {
   margin: 0;
 }
 
-.page blockquote {
+.page-wrap blockquote {
   margin: 10pt 0;
   padding-left: 14px;
   border-left: 3px solid var(--border-strong);
   color: var(--text-muted);
 }
 
-.page a {
+.page-wrap a {
   color: var(--accent);
   text-decoration: underline;
 }
 
-.page code {
+.page-wrap code {
   font-family: "Consolas", "Courier New", monospace;
   background: #f1f1f3;
   border-radius: 3px;
@@ -495,7 +539,7 @@ body {
   font-size: 0.92em;
 }
 
-.page pre {
+.page-wrap pre {
   background: #1f2329;
   color: #f5f5f5;
   border-radius: 6px;
@@ -504,25 +548,25 @@ body {
   margin: 10pt 0;
 }
 
-.page pre code {
+.page-wrap pre code {
   background: transparent;
   color: inherit;
   padding: 0;
 }
 
-.page hr {
+.page-wrap hr {
   border: none;
   border-top: 1px solid var(--border-strong);
   margin: 14pt 0;
 }
 
 /* Placeholder-ish look when empty (best effort without the Placeholder ext) */
-.page .ProseMirror:focus {
+.page-wrap .ProseMirror:focus {
   outline: none;
 }
 
 /* Selected text */
-.page ::selection {
+.page-wrap ::selection {
   background: #b4d2f7;
 }
 
@@ -644,7 +688,7 @@ body {
 /* ---------------------------------------------------------------------------
    Tables
    ---------------------------------------------------------------------------*/
-.page table {
+.page-wrap table {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
@@ -652,8 +696,8 @@ body {
   overflow: hidden;
 }
 
-.page table td,
-.page table th {
+.page-wrap table td,
+.page-wrap table th {
   border: 1px solid var(--border-strong);
   padding: 5px 8px;
   vertical-align: top;
@@ -662,13 +706,13 @@ body {
   min-width: 1em;
 }
 
-.page table th {
+.page-wrap table th {
   background: #f1f3f5;
   font-weight: 700;
   text-align: left;
 }
 
-.page table .selectedCell::after {
+.page-wrap table .selectedCell::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -676,7 +720,7 @@ body {
   pointer-events: none;
 }
 
-.page table .column-resize-handle {
+.page-wrap table .column-resize-handle {
   position: absolute;
   right: -2px;
   top: 0;
@@ -687,18 +731,18 @@ body {
   pointer-events: none;
 }
 
-.page .tableWrapper {
+.page-wrap .tableWrapper {
   overflow-x: auto;
 }
 
-.page table p {
+.page-wrap table p {
   margin: 0;
 }
 
 /* ---------------------------------------------------------------------------
    Images
    ---------------------------------------------------------------------------*/
-.page img {
+.page-wrap img {
   max-width: 100%;
   height: auto;
   display: block;
@@ -706,7 +750,7 @@ body {
   border-radius: 2px;
 }
 
-.page img.ProseMirror-selectednode {
+.page-wrap img.ProseMirror-selectednode {
   outline: 2px solid var(--accent);
 }
 
@@ -985,7 +1029,7 @@ html.focus-mode:not(.dark) {
   --canvas-bg: #e9e8e4;
 }
 
-html.focus-mode .page {
+html.focus-mode .fw-sheet {
   box-shadow: 0 1px 10px rgba(0, 0, 0, 0.1);
 }
 
@@ -1017,13 +1061,24 @@ html.focus-mode .page {
     display: block;
   }
 
-  .page {
+  /* On-screen pagination is a screen-only affordance: drop the simulated white
+     sheets and the page-break spacers when printing so the browser's own page
+     breaking (and @page below) governs the printed output. */
+  .page-sheets,
+  .fw-page-break {
+    display: none !important;
+  }
+
+  .page-wrap {
     width: auto;
-    min-height: 0;
-    box-shadow: none;
-    border-radius: 0;
+    min-height: 0 !important;
     margin: 0;
+    zoom: 1 !important;
+  }
+
+  .page-wrap .ProseMirror {
     padding: 1in;
+    min-height: 0;
   }
 
   @page {

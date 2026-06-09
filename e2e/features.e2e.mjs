@@ -27,7 +27,7 @@ test.beforeAll(async () => {
     env: { ...process.env, NODE_ENV: 'production' }
   })
   page = await app.firstWindow()
-  await page.waitForSelector('.page .ProseMirror', { state: 'visible', timeout: 30_000 })
+  await page.waitForSelector('.ProseMirror', { state: 'visible', timeout: 30_000 })
 
   // Persisted UI state (focus mode / outline visibility) from a previous run can
   // leave the toolbar hidden (focus mode is display:none). Clear those keys and
@@ -41,7 +41,7 @@ test.beforeAll(async () => {
     }
   })
   await page.reload()
-  await page.waitForSelector('.page .ProseMirror', { state: 'visible', timeout: 30_000 })
+  await page.waitForSelector('.ProseMirror', { state: 'visible', timeout: 30_000 })
 })
 
 test.afterAll(async () => {
@@ -71,13 +71,13 @@ test.afterAll(async () => {
 // --- Helpers -----------------------------------------------------------------
 
 async function typeInEditor(text) {
-  const editor = page.locator('.page .ProseMirror')
+  const editor = page.locator('.ProseMirror')
   await editor.click()
   await page.keyboard.type(text)
 }
 
 async function resetEditor() {
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+A')
   await page.keyboard.press('Delete')
 }
@@ -91,7 +91,7 @@ async function ensureFocusOff() {
     document.documentElement.classList.contains('focus-mode')
   )
   if (on) {
-    await page.locator('.page .ProseMirror').click()
+    await page.locator('.ProseMirror').click()
     await page.keyboard.press('F11')
   }
   await expect(page.locator('html')).not.toHaveClass(/focus-mode/)
@@ -115,7 +115,7 @@ test('Focus button toggles the focus-mode class on <html>', async () => {
   // Toggle OFF. The Focus button is now hidden (display:none under focus mode),
   // so we use the window-level F11 shortcut to flip it back — this still proves
   // the toggle is reversible and the button's active state clears.
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('F11')
   await expect(page.locator('html')).not.toHaveClass(/focus-mode/)
   await expect(focusBtn).not.toHaveClass(/is-active/)
@@ -126,7 +126,7 @@ test('Ctrl+Shift+F toggles focus mode', async () => {
 
   // The keydown listener is attached at window level; focusing the editor first
   // makes the shortcut path realistic.
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+Shift+F')
   await expect(page.locator('html')).toHaveClass(/focus-mode/)
 
@@ -137,7 +137,7 @@ test('Ctrl+Shift+F toggles focus mode', async () => {
 test('F11 toggles focus mode', async () => {
   await ensureFocusOff()
 
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('F11')
   await expect(page.locator('html')).toHaveClass(/focus-mode/)
 
@@ -169,7 +169,7 @@ test('Outline panel toggles and lists an applied H1 heading', async () => {
   await typeInEditor('Chapter One')
   await page.keyboard.press('Control+A')
   await page.locator('#toolbar .tb-style-select').selectOption('h1')
-  await expect(page.locator('.page .ProseMirror h1')).toHaveText('Chapter One')
+  await expect(page.locator('.ProseMirror h1')).toHaveText('Chapter One')
 
   // Open the outline panel.
   await outlineBtn.click()
@@ -206,10 +206,10 @@ test('Insert-date button inserts today’s localized date', async () => {
     })
   )
 
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.locator('#toolbar .tb-btn[data-name="insert-date"]').click()
 
-  await expect(page.locator('.page .ProseMirror')).toContainText(expectedDate)
+  await expect(page.locator('.ProseMirror')).toContainText(expectedDate)
 })
 
 // --- Status bar --------------------------------------------------------------
@@ -233,7 +233,7 @@ test('Status bar shows a "selected" readout when text is selected', async () => 
   await typeInEditor('one two three four five')
 
   // Select everything.
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+A')
 
   const wordEl = page.locator('#statusbar .sb-words')
@@ -265,7 +265,7 @@ test('Ctrl+Shift+V (plain-paste arm) is registered and does not throw', async ()
   }
   page.on('pageerror', onError)
 
-  await page.locator('.page .ProseMirror').click()
+  await page.locator('.ProseMirror').click()
   await page.keyboard.press('Control+Shift+V')
   // Give any handler a tick to run.
   await page.waitForTimeout(100)
@@ -274,5 +274,5 @@ test('Ctrl+Shift+V (plain-paste arm) is registered and does not throw', async ()
 
   expect(pageError).toBeNull()
   // The existing content is untouched (no clipboard payload was delivered).
-  await expect(page.locator('.page .ProseMirror')).toContainText('keep this text')
+  await expect(page.locator('.ProseMirror')).toContainText('keep this text')
 })

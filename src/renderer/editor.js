@@ -30,6 +30,7 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { Image } from '@tiptap/extension-image'
 import { SearchHighlight } from './find.js'
+import { Pagination } from './pagination.js'
 
 // --- Custom FontSize extension (built on the textStyle mark) -----------------
 // Adds a `fontSize` global attribute to textStyle and set/unset commands.
@@ -291,6 +292,7 @@ export function createEditor({
       TableCell,
       Image.configure({ inline: false, allowBase64: true }),
       SearchHighlight,
+      Pagination,
       FontSize,
       LineHeight,
       BlockIndent,

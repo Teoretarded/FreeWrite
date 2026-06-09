@@ -25,7 +25,13 @@
       <div class="body-row" id="body-row">
         <aside id="outline-panel" class="outline-panel" aria-label="Document outline"></aside>
         <main class="editor-area" id="editor-area">
-          <div class="page" id="page" spellcheck="true"></div>
+          <!-- .page-wrap holds the white page sheets (behind) and the editor
+               content (in front). Zoom is applied to .page-wrap. The editor is
+               mounted on .page-wrap, so ProseMirror is appended here as a
+               sibling of .page-sheets. -->
+          <div class="page-wrap" id="page" spellcheck="true">
+            <div class="page-sheets" id="page-sheets" aria-hidden="true"></div>
+          </div>
         </main>
       </div>
 

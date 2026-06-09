@@ -533,6 +533,341 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Dropdown menus (Table, etc.)
+   ---------------------------------------------------------------------------*/
+.tb-dropdown-trigger {
+  gap: 2px;
+}
+
+.tb-dropdown-popup {
+  min-width: 180px;
+  padding: 4px;
+}
+
+.tb-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+   Tables
+   ---------------------------------------------------------------------------*/
+.page table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 10pt 0;
+  overflow: hidden;
+}
+
+.page table td,
+.page table th {
+  border: 1px solid var(--border-strong);
+  padding: 5px 8px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  min-width: 1em;
+}
+
+.page table th {
+  background: #f1f3f5;
+  font-weight: 700;
+  text-align: left;
+}
+
+.page table .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(43, 108, 176, 0.16);
+  pointer-events: none;
+}
+
+.page table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background: var(--accent);
+  cursor: col-resize;
+  pointer-events: none;
+}
+
+.page .tableWrapper {
+  overflow-x: auto;
+}
+
+.page table p {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Images
+   ---------------------------------------------------------------------------*/
+.page img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 6pt 0;
+  border-radius: 2px;
+}
+
+.page img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+}
+
+/* ---------------------------------------------------------------------------
+   Find & Replace bar
+   ---------------------------------------------------------------------------*/
+.find-host {
+  flex: 0 0 auto;
+}
+
+.fw-findbar {
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--chrome-bg);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.fw-findbar.open {
+  display: flex;
+}
+
+.fw-find-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fw-find-input,
+.fw-replace-input {
+  height: 28px;
+  min-width: 200px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  padding: 0 8px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.fw-find-input:focus,
+.fw-replace-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.fw-find-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 44px;
+  text-align: center;
+}
+
+.fw-find-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.fw-find-btn:hover {
+  background: var(--hover-bg);
+}
+
+.fw-find-btn.is-active {
+  background: var(--active-bg);
+  border-color: var(--active-border);
+  color: var(--accent);
+}
+
+/* Search match decorations painted by find.js */
+.fw-search-match {
+  background: rgba(255, 213, 0, 0.45);
+  border-radius: 2px;
+}
+
+.fw-search-current {
+  background: #ff9632;
+  color: #1f2329;
+}
+
+/* ---------------------------------------------------------------------------
+   Recovery banner
+   ---------------------------------------------------------------------------*/
+.recovery-banner {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: #fff7e0;
+  border-bottom: 1px solid #e6c84a;
+  color: #6b5300;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.recovery-banner.show {
+  display: flex;
+}
+
+.rb-text {
+  flex: 1;
+}
+
+.rb-btn {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.rb-recover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.rb-btn:hover {
+  filter: brightness(0.97);
+}
+
+/* ---------------------------------------------------------------------------
+   Status-bar zoom control
+   ---------------------------------------------------------------------------*/
+.sb-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sb-zoom-btn {
+  width: 22px;
+  height: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.sb-zoom-btn:hover {
+  background: var(--hover-bg);
+}
+
+.sb-zoom-select {
+  height: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sb-file {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+   Accessibility: visible focus ring for keyboard users
+   ---------------------------------------------------------------------------*/
+.tb-btn:focus-visible,
+.tb-select:focus-visible,
+.fw-find-btn:focus-visible,
+.sb-zoom-btn:focus-visible,
+.rb-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---------------------------------------------------------------------------
+   Dark mode — styles the app chrome but keeps the .page white (like Word)
+   ---------------------------------------------------------------------------*/
+html.dark {
+  --chrome-bg: #2a2d31;
+  --chrome-bg-2: #232629;
+  --canvas-bg: #17191c;
+  --border: #3a3d42;
+  --border-strong: #45494f;
+  --text: #e4e6ea;
+  --text-muted: #a0a4ab;
+  --accent: #5b9be0;
+  --accent-soft: #233247;
+  --active-bg: #2d4763;
+  --active-border: #3f6699;
+  --hover-bg: #34383d;
+  --page-shadow: rgba(0, 0, 0, 0.5);
+}
+
+html.dark body {
+  background: var(--canvas-bg);
+}
+
+html.dark .tb-select,
+html.dark .fw-find-input,
+html.dark .fw-replace-input,
+html.dark .fw-find-btn,
+html.dark .sb-zoom-btn,
+html.dark .sb-zoom-select,
+html.dark .rb-btn {
+  background: #1f2226;
+  color: var(--text);
+}
+
+html.dark .tb-popup,
+html.dark .tb-dropdown-popup,
+html.dark .tb-lh-popup,
+html.dark .tb-color-popup {
+  background: #26292d;
+  color: var(--text);
+}
+
+html.dark .tb-menu-item {
+  color: var(--text);
+}
+
+html.dark .tb-menu-item:hover {
+  background: var(--accent-soft);
+}
+
+html.dark .recovery-banner {
+  background: #3a3320;
+  border-color: #6b5a1e;
+  color: #f0dca0;
+}
+
+html.dark .recovery-banner .rb-recover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* The page itself stays white in dark mode (Word-like). */
+
+/* ---------------------------------------------------------------------------
    Print / PDF mode
    The main process renders PDF with its own print CSS, but we keep the page
    styling consistent here so an in-app print also looks right.

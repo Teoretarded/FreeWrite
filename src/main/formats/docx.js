@@ -39,8 +39,24 @@ export async function serialize(html) {
   return toBuffer(out)
 }
 
+// Normalize a Buffer | ArrayBuffer | TypedArray/DataView into a Node Buffer.
+// Never treats a string as document bytes (a string here is a programming error,
+// not docx content).
+function toInputBuffer(data) {
+  if (Buffer.isBuffer(data)) return data
+  if (data instanceof ArrayBuffer) return Buffer.from(data)
+  if (ArrayBuffer.isView(data)) {
+    return Buffer.from(data.buffer, data.byteOffset, data.byteLength)
+  }
+  throw new Error('Not a valid .docx (expected file bytes)')
+}
+
 export async function deserialize(data) {
-  const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data)
-  const result = await mammoth.convertToHtml({ buffer })
-  return result.value
+  const buffer = toInputBuffer(data)
+  try {
+    const result = await mammoth.convertToHtml({ buffer })
+    return result.value
+  } catch {
+    throw new Error('Not a valid .docx file')
+  }
 }

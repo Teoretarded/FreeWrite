@@ -58,7 +58,9 @@ export async function deserialize(data) {
   const str = Buffer.isBuffer(data) ? data.toString('utf8') : String(data ?? '')
 
   // Extract the inner HTML of the <body> if present; otherwise return as-is.
-  const match = str.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
+  // Use a GREEDY capture so a literal '</body>' inside the content (e.g. an HTML
+  // code sample) doesn't truncate the document — match to the LAST </body>.
+  const match = str.match(/<body[^>]*>([\s\S]*)<\/body>/i)
   if (match) return match[1].trim()
   return str.trim()
 }

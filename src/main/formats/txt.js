@@ -5,9 +5,11 @@
 export const name = 'Plain Text'
 export const extensions = ['txt']
 
-// Block-level tags whose boundaries should become line breaks in plain text.
+// Block-level tags whose CLOSING boundary becomes a line break in plain text.
+// Note: 'br' is handled separately by the dedicated <br> replace below, so it
+// is intentionally absent here. Table cells are separated by a tab (see below).
 const BLOCK_TAGS = [
-  'p', 'div', 'br', 'li', 'tr',
+  'p', 'div', 'li', 'tr',
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'blockquote', 'pre', 'section', 'article', 'header', 'footer',
   'ul', 'ol', 'table', 'hr'
@@ -30,6 +32,9 @@ export async function serialize(html) {
   // Normalize <br> and closing block tags into newline markers.
   text = text.replace(/<br\s*\/?>/gi, '\n')
 
+  // Table cells: separate adjacent cells with a tab so they don't concatenate.
+  text = text.replace(/<\/(td|th)\s*>/gi, '\t')
+
   // After each closing block tag, insert a newline.
   const closeRe = new RegExp(`</(${BLOCK_TAGS.join('|')})\\s*>`, 'gi')
   text = text.replace(closeRe, '\n')
@@ -49,6 +54,7 @@ export async function serialize(html) {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/\r\n?/g, '\n')
+    .replace(/\t+$/gm, '')
     .trim()
 
   return text + '\n'

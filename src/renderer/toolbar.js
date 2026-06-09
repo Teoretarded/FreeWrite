@@ -64,7 +64,17 @@ function icon(name) {
     newFile: '<path d="M14 3v5h5"/><path d="M5 3h9l5 5v13H5z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>',
     open: '<path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H3z"/><path d="M3 7V5h5l2 2"/>',
     save: '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="5"/>',
-    saveAs: '<path d="M5 3h9l3 3v8"/><path d="M5 3v18h7"/><path d="M8 3v5h6"/><circle cx="18" cy="18" r="3"/><line x1="18" y1="16.5" x2="18" y2="19.5"/><line x1="16.5" y1="18" x2="19.5" y2="18"/>'
+    saveAs: '<path d="M5 3h9l3 3v8"/><path d="M5 3v18h7"/><path d="M8 3v5h6"/><circle cx="18" cy="18" r="3"/><line x1="18" y1="16.5" x2="18" y2="19.5"/><line x1="16.5" y1="18" x2="19.5" y2="18"/>',
+    find: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    table: '<rect x="3" y="4" width="18" height="16" rx="1"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/>',
+    image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
+    link: '<path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    unlink: '<path d="M18.84 12.25 21 10.07a5 5 0 0 0-7.07-7.07l-2.18 2.16"/><path d="M5.16 11.75 3 13.93a5 5 0 0 0 7.07 7.07l2.18-2.16"/><line x1="2" y1="2" x2="22" y2="22"/>',
+    print: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/>',
+    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+    hr: '<line x1="3" y1="12" x2="21" y2="12"/>',
+    quote: '<path d="M7 7H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1H4"/><path d="M17 7h-3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2v3a1 1 0 0 1-1 1h-1"/>'
   }
   return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || ''}</svg>`
 }
@@ -154,6 +164,40 @@ function makeColorControl({ label, title, colors, swatchVarClass, onPick, onClea
   trigger.addEventListener('click', (e) => {
     e.preventDefault()
     // close any other open popups
+    document.querySelectorAll('.tb-popup.open').forEach((p) => {
+      if (p !== pop) p.classList.remove('open')
+    })
+    pop.classList.toggle('open')
+  })
+
+  wrap.append(trigger, pop)
+  return { wrap, trigger, pop }
+}
+
+// A generic icon-triggered dropdown menu (used for the Table menu).
+function makeDropdown({ iconName, title, items }) {
+  const wrap = el('div', { class: 'tb-color' })
+  const trigger = el('button', { type: 'button', class: 'tb-btn tb-dropdown-trigger', title })
+  trigger.innerHTML = `${icon(iconName)}<span class="tb-caret">▾</span>`
+  const pop = el('div', { class: 'tb-popup tb-dropdown-popup', role: 'menu' })
+
+  for (const item of items) {
+    if (item.separator) {
+      pop.append(el('div', { class: 'tb-menu-sep' }))
+      continue
+    }
+    const mi = el('button', { type: 'button', class: 'tb-menu-item' }, item.label)
+    mi.addEventListener('mousedown', (e) => e.preventDefault())
+    mi.addEventListener('click', () => {
+      item.onClick()
+      pop.classList.remove('open')
+    })
+    pop.append(mi)
+  }
+
+  trigger.addEventListener('mousedown', (e) => e.preventDefault())
+  trigger.addEventListener('click', (e) => {
+    e.preventDefault()
     document.querySelectorAll('.tb-popup.open').forEach((p) => {
       if (p !== pop) p.classList.remove('open')
     })
@@ -355,6 +399,90 @@ export function buildToolbar(container, editor, actions = {}) {
   })
   indentGroup.append(indentBtn, outdentBtn)
 
+  // --- Blocks: blockquote + horizontal rule ---------------------------------
+  const blockGroup = makeGroup()
+  const quoteBtn = makeButton({
+    name: 'blockquote',
+    iconName: 'quote',
+    title: 'Blockquote',
+    onClick: () => editor.chain().focus().toggleBlockquote().run()
+  })
+  const hrBtn = makeButton({
+    name: 'hr',
+    iconName: 'hr',
+    title: 'Horizontal rule',
+    onClick: () => editor.chain().focus().setHorizontalRule().run()
+  })
+  blockGroup.append(quoteBtn, hrBtn)
+
+  // --- Insert: table dropdown + image + link --------------------------------
+  const insertGroup = makeGroup()
+
+  const tableMenu = makeDropdown({
+    iconName: 'table',
+    title: 'Table',
+    items: [
+      { label: 'Insert table (3×3)', onClick: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
+      { separator: true },
+      { label: 'Add row above', onClick: () => editor.chain().focus().addRowBefore().run() },
+      { label: 'Add row below', onClick: () => editor.chain().focus().addRowAfter().run() },
+      { label: 'Add column left', onClick: () => editor.chain().focus().addColumnBefore().run() },
+      { label: 'Add column right', onClick: () => editor.chain().focus().addColumnAfter().run() },
+      { separator: true },
+      { label: 'Delete row', onClick: () => editor.chain().focus().deleteRow().run() },
+      { label: 'Delete column', onClick: () => editor.chain().focus().deleteColumn().run() },
+      { label: 'Toggle header row', onClick: () => editor.chain().focus().toggleHeaderRow().run() },
+      { separator: true },
+      { label: 'Delete table', onClick: () => editor.chain().focus().deleteTable().run() }
+    ]
+  })
+
+  const imageBtn = makeButton({
+    name: 'image',
+    iconName: 'image',
+    title: 'Insert image',
+    onClick: () => actions.onImage?.()
+  })
+  const linkBtn = makeButton({
+    name: 'link',
+    iconName: 'link',
+    title: 'Insert/edit link',
+    onClick: () => actions.onLink?.()
+  })
+  const unlinkBtn = makeButton({
+    name: 'unlink',
+    iconName: 'unlink',
+    title: 'Remove link',
+    onClick: () => actions.onUnlink?.()
+  })
+  insertGroup.append(tableMenu.wrap, imageBtn, linkBtn, unlinkBtn)
+
+  // --- Tools: find + print --------------------------------------------------
+  const toolsGroup = makeGroup()
+  const findBtn = makeButton({
+    name: 'find',
+    iconName: 'find',
+    title: 'Find & replace (Ctrl+F)',
+    onClick: () => actions.onFind?.()
+  })
+  const printBtn = makeButton({
+    name: 'print',
+    iconName: 'print',
+    title: 'Print (Ctrl+P)',
+    onClick: () => actions.onPrint?.()
+  })
+  toolsGroup.append(findBtn, printBtn)
+
+  // --- View: dark-mode toggle -----------------------------------------------
+  const viewGroup = makeGroup()
+  const themeBtn = makeButton({
+    name: 'theme',
+    iconName: 'moon',
+    title: 'Toggle dark mode',
+    onClick: () => actions.onToggleTheme?.()
+  })
+  viewGroup.append(themeBtn)
+
   // Assemble.
   container.append(
     fileGroup, makeSep(),
@@ -364,7 +492,11 @@ export function buildToolbar(container, editor, actions = {}) {
     colorGroup, makeSep(),
     scriptGroup, makeSep(),
     listGroup, alignGroup, makeSep(),
-    spacingGroup, indentGroup
+    spacingGroup, indentGroup, makeSep(),
+    blockGroup, makeSep(),
+    insertGroup, makeSep(),
+    toolsGroup, makeSep(),
+    viewGroup
   )
 
   // Close popups when clicking elsewhere.
@@ -377,6 +509,7 @@ export function buildToolbar(container, editor, actions = {}) {
   // --- Active-state refresh -------------------------------------------------
   function setActive(btn, active) {
     btn.classList.toggle('is-active', !!active)
+    btn.setAttribute('aria-pressed', String(!!active))
   }
   function setDisabled(btn, disabled) {
     btn.disabled = !!disabled
@@ -397,6 +530,8 @@ export function buildToolbar(container, editor, actions = {}) {
     setActive(alignCenterBtn, editor.isActive({ textAlign: 'center' }))
     setActive(alignRightBtn, editor.isActive({ textAlign: 'right' }))
     setActive(alignJustifyBtn, editor.isActive({ textAlign: 'justify' }))
+    setActive(quoteBtn, editor.isActive('blockquote'))
+    setActive(linkBtn, editor.isActive('link'))
 
     setDisabled(undoBtn, !editor.can().undo())
     setDisabled(redoBtn, !editor.can().redo())
@@ -418,8 +553,16 @@ export function buildToolbar(container, editor, actions = {}) {
     sizeSelect.value = FONT_SIZES.includes(numSize) ? numSize : ''
   }
 
+  // Reflect dark-mode active state on the theme button (icon + pressed state).
+  function setDarkActive(dark) {
+    themeBtn.innerHTML = icon(dark ? 'sun' : 'moon')
+    themeBtn.classList.toggle('is-active', !!dark)
+    themeBtn.setAttribute('aria-pressed', String(!!dark))
+    themeBtn.title = dark ? 'Switch to light mode' : 'Switch to dark mode'
+  }
+
   refresh()
-  return { refresh }
+  return { refresh, setDarkActive }
 }
 
 // Indentation helper. In lists, sink/lift list items. Outside lists, adjust a

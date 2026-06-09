@@ -448,7 +448,9 @@ body {
   left: 0;
   width: 816px;
   height: 1056px;
-  background: #fff;
+  /* Page/paper color — user-configurable via Settings (settings.js writes
+     --fw-page-color on <html>). Applies to every sheet, on new docs and open. */
+  background: var(--fw-page-color, #ffffff);
   box-shadow: 0 2px 14px var(--page-shadow);
   border-radius: 8px;
 }
@@ -471,6 +473,12 @@ body {
   position: relative;
   z-index: 1;
   background: transparent;
+  /* Default text color — user-configurable via Settings (settings.js writes
+     --fw-text-color on <html>). This is the FALLBACK for typed text and any
+     pasted text WITHOUT an explicit color mark; explicit TextStyle color marks
+     still win. Keeping the caret visible on custom page colors below. */
+  color: var(--fw-text-color, #1a1a1a);
+  caret-color: var(--accent);
   padding: 96px;
   outline: none;
   min-height: 1056px;
@@ -665,6 +673,201 @@ body {
 
 .toast-success {
   background: #2f855a;
+}
+
+/* ---------------------------------------------------------------------------
+   Settings panel (modal overlay + centered card)
+   Live-previews default text color, page color, and the smart-paste toggle.
+   Works in both light and dark mode (uses the same chrome CSS variables).
+   ---------------------------------------------------------------------------*/
+.fw-settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.42);
+  padding: 24px;
+}
+
+.fw-settings-overlay.open {
+  display: flex;
+}
+
+.fw-settings-card {
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: var(--chrome-bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.fw-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fw-settings-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.fw-settings-x {
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.fw-settings-x:hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.fw-settings-body {
+  padding: 8px 20px 4px;
+}
+
+.fw-set-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.fw-set-row:last-child {
+  border-bottom: none;
+}
+
+.fw-set-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.fw-set-hint {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.fw-set-colors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fw-set-swatch {
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fw-set-swatch:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fw-set-swatch.is-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.fw-set-picker {
+  width: 34px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fw-set-hex {
+  font-size: 12px;
+  font-family: "Consolas", "Courier New", monospace;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.fw-set-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.fw-set-checkbox {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.fw-set-toggle-text {
+  display: block;
+}
+
+.fw-settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.fw-set-btn {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.fw-set-btn:hover {
+  background: var(--hover-bg);
+}
+
+.fw-set-done {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.fw-set-done:hover {
+  filter: brightness(1.05);
+  background: var(--accent);
 }
 
 /* ---------------------------------------------------------------------------
@@ -987,6 +1190,21 @@ html.dark .tb-menu-item {
 
 html.dark .tb-menu-item:hover {
   background: var(--accent-soft);
+}
+
+html.dark .fw-settings-card {
+  background: #26292d;
+}
+
+html.dark .fw-set-picker,
+html.dark .fw-set-btn {
+  background: #1f2226;
+  color: var(--text);
+}
+
+html.dark .fw-set-done {
+  background: var(--accent);
+  color: #fff;
 }
 
 html.dark .recovery-banner {

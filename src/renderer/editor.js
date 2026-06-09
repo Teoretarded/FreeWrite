@@ -31,6 +31,37 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { Image } from '@tiptap/extension-image'
 import { SearchHighlight } from './find.js'
 import { Pagination } from './pagination.js'
+import * as settings from './settings.js'
+
+/**
+ * Strip foreground/background colors from pasted HTML so pasted text can never
+ * arrive invisible (e.g. white text from a website on the white page). The
+ * text then falls back to the user's default text color (--fw-text-color).
+ * All other formatting (bold/italic/headings/lists/links/alignment) is kept.
+ *
+ * Exported (and exposed on window in createEditor) so it can be unit/e2e tested
+ * headlessly without driving a real clipboard paste.
+ *
+ * @param {string} html
+ * @returns {string}
+ */
+export function transformPastedHTML(html) {
+  if (!html) return html
+  const div = document.createElement('div')
+  div.innerHTML = html
+  // Walk every element: drop inline color/background-color, legacy color
+  // attributes, and neutralize <font color>. Keep everything else intact.
+  div.querySelectorAll('*').forEach((node) => {
+    if (node.style) {
+      node.style.removeProperty('color')
+      node.style.removeProperty('background-color')
+      node.style.removeProperty('background')
+    }
+    node.removeAttribute('color')
+    node.removeAttribute('bgcolor')
+  })
+  return div.innerHTML
+}
 
 // --- Custom FontSize extension (built on the textStyle mark) -----------------
 // Adds a `fontSize` global attribute to textStyle and set/unset commands.
@@ -261,6 +292,15 @@ export function createEditor({
           }
         }
         return false
+      },
+      // Smart paste: when normalize-paste is enabled (read live each paste so
+      // the Settings toggle takes effect immediately), strip foreground and
+      // background colors from pasted HTML so text can never paste invisibly.
+      // Runs only on the rich-paste path; the plain-paste branch above has
+      // already returned by then, so the two coexist cleanly.
+      transformPastedHTML: (html) => {
+        if (!settings.get().normalizePaste) return html
+        return transformPastedHTML(html)
       }
       // Note: file drag-and-drop (images + documents) is handled at the window
       // level in main.js, which routes via the preload bridge (getPathForFile /
@@ -299,6 +339,9 @@ export function createEditor({
       EditorKeymaps
     ],
     onCreate: ({ editor: ed }) => {
+      // Expose the paste transform for headless e2e/unit testing (harmless in
+      // production; lets tests verify color-stripping without a real clipboard).
+      if (typeof window !== 'undefined') window.__fwTransformPastedHTML = transformPastedHTML
       if (typeof onCreate === 'function') onCreate(ed)
     },
     onUpdate: () => {

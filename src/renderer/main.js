@@ -12,6 +12,8 @@ import { buildStatusbar } from './statusbar.js'
 import { mountFind } from './find.js'
 import { mountOutline } from './outline.js'
 import { createFocusMode } from './focusmode.js'
+import { mountSettingsPanel } from './settings-panel.js'
+import './settings.js' // import for side effect: applies saved CSS vars on load
 import './styles.css'
 
 // --- Module-level state ------------------------------------------------------
@@ -23,6 +25,7 @@ let statusApi = null
 let findApi = null
 let outlineApi = null
 let focusApi = null
+let settingsApi = null
 let autosaveTimer = null
 
 const AUTOSAVE_KEY = 'freewrite-autosave'
@@ -525,6 +528,9 @@ function boot() {
     if (toolbarApi) toolbarApi.setFocusActive(active)
   })
 
+  // Settings panel (global default colors + smart-paste toggle).
+  settingsApi = mountSettingsPanel(document.body)
+
   toolbarApi = buildToolbar(toolbarEl, editor, {
     onNew: doNew,
     onOpen: doOpen,
@@ -539,7 +545,8 @@ function boot() {
     onInsertDate: doInsertDate,
     onToggleOutline: toggleOutline,
     onToggleFocus: toggleFocus,
-    onToggleTheme: toggleTheme
+    onToggleTheme: toggleTheme,
+    onOpenSettings: () => settingsApi && settingsApi.toggle()
   })
 
   // Reflect persisted theme/zoom now that toolbar/status exist.

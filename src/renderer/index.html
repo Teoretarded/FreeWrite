@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'"
+    />
+    <title>FreeWrite</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Top toolbar -->
+      <div id="toolbar" class="toolbar" role="toolbar" aria-label="Formatting toolbar"></div>
+
+      <!-- Scrollable canvas holding the document page -->
+      <main class="editor-area" id="editor-area">
+        <div class="page" id="page" spellcheck="true"></div>
+      </main>
+
+      <!-- Bottom status bar -->
+      <footer id="statusbar" class="statusbar"></footer>
+    </div>
+
+    <!-- Transient toast notifications -->
+    <div id="toast-host" class="toast-host" aria-live="polite"></div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

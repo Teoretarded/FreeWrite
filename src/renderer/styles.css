@@ -1,0 +1,576 @@
+/* ===========================================================================
+   FreeWrite — renderer styles
+   A clean, modern, Word-like word processor look: light-grey app chrome, a
+   grouped toolbar, a white "page" centered on a grey canvas, readable
+   typography, clear active-button states, simple toasts, and print CSS.
+   ===========================================================================*/
+
+:root {
+  --chrome-bg: #f3f3f4;
+  --chrome-bg-2: #ebebed;
+  --canvas-bg: #d7d8db;
+  --border: #d6d6da;
+  --border-strong: #c2c2c8;
+  --text: #1f2329;
+  --text-muted: #6b6f76;
+  --accent: #2b6cb0;
+  --accent-soft: #e3eefb;
+  --active-bg: #d3e3f7;
+  --active-border: #9cc1ee;
+  --hover-bg: #e6e6e9;
+  --page-shadow: rgba(0, 0, 0, 0.18);
+  --toolbar-h: auto;
+  --page-width: 8.5in;
+  --page-pad: 1in;
+  --radius: 6px;
+  --font-ui: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: "Calibri", "Carlito", "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: var(--canvas-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+   Toolbar
+   ---------------------------------------------------------------------------*/
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  background: linear-gradient(var(--chrome-bg), var(--chrome-bg-2));
+  border-bottom: 1px solid var(--border-strong);
+  user-select: none;
+  flex: 0 0 auto;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+
+.tb-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.tb-sep {
+  width: 1px;
+  height: 22px;
+  margin: 0 6px;
+  background: var(--border-strong);
+  display: inline-block;
+}
+
+.tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.tb-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--border);
+}
+
+.tb-btn:active {
+  background: var(--active-bg);
+}
+
+.tb-btn.is-active {
+  background: var(--active-bg);
+  border-color: var(--active-border);
+  color: var(--accent);
+}
+
+.tb-btn.is-disabled,
+.tb-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tb-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* Selects (style / font / size) */
+.tb-select {
+  height: 30px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  padding: 0 26px 0 8px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M1 3l4 4 4-4' fill='none' stroke='%236b6f76' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.tb-select:hover {
+  border-color: var(--active-border);
+}
+
+.tb-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.tb-style-select {
+  min-width: 124px;
+}
+.tb-font-select {
+  min-width: 138px;
+}
+.tb-size-select {
+  min-width: 72px;
+}
+
+/* Color controls */
+.tb-color {
+  position: relative;
+  display: inline-flex;
+}
+
+.tb-color-trigger {
+  flex-direction: column;
+  gap: 1px;
+  min-width: 34px;
+  padding: 2px 5px;
+}
+
+.tb-color-trigger .tb-color-label {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tb-color-trigger .tb-color-bar {
+  display: block;
+  width: 18px;
+  height: 4px;
+  border-radius: 1px;
+  background: #e60000;
+}
+
+.tb-color-highlight .tb-color-bar {
+  background: #fff2a8;
+}
+
+.tb-caret {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.tb-lh-trigger {
+  gap: 2px;
+}
+
+.tb-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 50;
+  display: none;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  padding: 8px;
+}
+
+.tb-popup.open {
+  display: block;
+}
+
+.tb-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 20px);
+  gap: 4px;
+}
+
+.tb-swatch {
+  width: 20px;
+  height: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tb-swatch:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tb-color-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.tb-color-input {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.tb-color-clear {
+  flex: 1;
+  height: 26px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--chrome-bg);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.tb-color-clear:hover {
+  background: var(--hover-bg);
+}
+
+/* Line-spacing menu */
+.tb-lh-popup {
+  min-width: 130px;
+  padding: 4px;
+}
+
+.tb-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.tb-menu-item:hover {
+  background: var(--accent-soft);
+}
+
+.tb-menu-clear {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 4px 4px;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   Editor area + page
+   ---------------------------------------------------------------------------*/
+.editor-area {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 32px 24px 64px;
+  background: var(--canvas-bg);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.page {
+  width: var(--page-width);
+  min-height: 11in;
+  background: #fff;
+  padding: var(--page-pad);
+  box-shadow: 0 2px 14px var(--page-shadow);
+  border-radius: 2px;
+  color: #111;
+  font-family: var(--font-body);
+  font-size: 11pt;
+  line-height: 1.5;
+  outline: none;
+}
+
+/* TipTap/ProseMirror surface */
+.page .ProseMirror {
+  outline: none;
+  min-height: calc(11in - 2 * var(--page-pad));
+}
+
+.page .ProseMirror > * + * {
+  margin-top: 0;
+}
+
+.page p {
+  margin: 0 0 10pt;
+}
+
+.page h1 {
+  font-size: 22pt;
+  font-weight: 700;
+  margin: 14pt 0 8pt;
+  line-height: 1.2;
+}
+
+.page h2 {
+  font-size: 17pt;
+  font-weight: 700;
+  margin: 12pt 0 6pt;
+  line-height: 1.25;
+}
+
+.page h3 {
+  font-size: 14pt;
+  font-weight: 700;
+  margin: 10pt 0 5pt;
+  line-height: 1.3;
+}
+
+.page ul,
+.page ol {
+  margin: 0 0 10pt;
+  padding-left: 28px;
+}
+
+.page li {
+  margin: 2pt 0;
+}
+
+.page li > p {
+  margin: 0;
+}
+
+.page blockquote {
+  margin: 10pt 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--border-strong);
+  color: var(--text-muted);
+}
+
+.page a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.page code {
+  font-family: "Consolas", "Courier New", monospace;
+  background: #f1f1f3;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.92em;
+}
+
+.page pre {
+  background: #1f2329;
+  color: #f5f5f5;
+  border-radius: 6px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 10pt 0;
+}
+
+.page pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.page hr {
+  border: none;
+  border-top: 1px solid var(--border-strong);
+  margin: 14pt 0;
+}
+
+/* Placeholder-ish look when empty (best effort without the Placeholder ext) */
+.page .ProseMirror:focus {
+  outline: none;
+}
+
+/* Selected text */
+.page ::selection {
+  background: #b4d2f7;
+}
+
+/* ---------------------------------------------------------------------------
+   Status bar
+   ---------------------------------------------------------------------------*/
+.statusbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 14px;
+  background: linear-gradient(var(--chrome-bg-2), var(--chrome-bg));
+  border-top: 1px solid var(--border-strong);
+  font-size: 12px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.sb-left,
+.sb-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sb-item {
+  white-space: nowrap;
+}
+
+.sb-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2faa5b;
+  transition: background 0.15s ease;
+}
+
+.sb-saved.is-unsaved .sb-dot {
+  background: #e0a400;
+}
+
+.sb-saved.is-unsaved .sb-saved-text {
+  color: #a07600;
+}
+
+/* ---------------------------------------------------------------------------
+   Toasts
+   ---------------------------------------------------------------------------*/
+.toast-host {
+  position: fixed;
+  right: 18px;
+  bottom: 42px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  min-width: 220px;
+  max-width: 360px;
+  padding: 11px 14px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-error {
+  background: #c0392b;
+}
+
+.toast-info {
+  background: #2b6cb0;
+}
+
+.toast-success {
+  background: #2f855a;
+}
+
+/* ---------------------------------------------------------------------------
+   Print / PDF mode
+   The main process renders PDF with its own print CSS, but we keep the page
+   styling consistent here so an in-app print also looks right.
+   ---------------------------------------------------------------------------*/
+@media print {
+  body {
+    background: #fff;
+  }
+
+  .toolbar,
+  .statusbar,
+  .toast-host {
+    display: none !important;
+  }
+
+  #app {
+    height: auto;
+    overflow: visible;
+  }
+
+  .editor-area {
+    overflow: visible;
+    padding: 0;
+    background: #fff;
+    display: block;
+  }
+
+  .page {
+    width: auto;
+    min-height: 0;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    padding: 1in;
+  }
+
+  @page {
+    size: letter;
+    margin: 1in;
+  }
+}
